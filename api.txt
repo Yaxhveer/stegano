@@ -1,0 +1,34 @@
+/audiohide POST
+req: 
+    output: str = name of output file
+    secret: file = secret text file
+    pubKey: file(.pem) = user public key
+    audio: file(.wav) = audio file
+res: [ audio file download | { error: err, done: false } ]
+
+
+/imagehide POST
+req: 
+    output: str = name of output file
+    secret: file = secret text file
+    pubKey: file(.pem) = user public key
+    image: file(.png, .tiff, .bmp, .tga) = image file
+res: [ image file download | { error: err, done: false } ]
+
+
+/audioextract POST
+req: 
+    passphrase: str = passphrase of user
+    output: str = name of output file (for name to be remembered from file use empty str)
+    priKey: file(.pem) = user private key
+    audio: file(.wav) = audio file
+res: [ secret file download | { error: err, done: false } ]
+
+
+/imageextract POST
+req: 
+    passphrase: str = passphrase of user
+    output: str = name of output file (for name to be remembered from file use empty str)
+    priKey: file(.pem) = user private key
+    image: file(.png, .tiff, .bmp, .tga) = image file
+res: [ secret file download | { error: err, done: false } ]
