@@ -1,4 +1,3 @@
-import os
 import zlib
 from cryptography.hazmat.primitives.padding import PKCS7
 from cryptography.hazmat.primitives.asymmetric import padding

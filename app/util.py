@@ -1,5 +1,4 @@
-import os
-from PIL import Image
+import numpy as np
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 
@@ -24,3 +23,16 @@ def load_private_key(key_path, passphrase):
             backend=default_backend()
         )
     return private_key
+
+def get_data_type(bytes_per_sample):
+     # Convert frames to a numpy array
+    if bytes_per_sample == 1:
+        dtype = np.uint8
+    elif bytes_per_sample == 2:
+        dtype = np.uint16
+    elif bytes_per_sample == 3:
+        dtype = np.uint32
+    else:
+        raise ValueError("Unsupported sample width")
+    
+    return dtype

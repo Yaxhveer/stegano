@@ -2,6 +2,7 @@ zz.txt
 myenv
 myprivatekey.pem
 mypublickey.pem
+hide_extracted.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

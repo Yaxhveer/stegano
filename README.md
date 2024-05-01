@@ -16,22 +16,22 @@ python generate_keys.py
 
 - Encode
 ```
-python cli.py hide audio examples/audio.wav hide.txt mypublickey.pem examples/audio-secret.wav
+python app/cli.py hide audio examples/audio.wav hide.txt mypublickey.pem examples/audio-secret.wav
 ```
 
 - Decode
 ```
-python cli.py extract audio examples/audio-secret.wav myprivatekey.pem your_passphrase hide_extracted.txt
+python app/cli.py extract audio examples/audio-secret.wav myprivatekey.pem your_passphrase hide_extracted.txt
 ```
 
 ### Image
 
 - Encode
 ```
-python cli.py hide image examples/image.png hide.txt mypublickey.pem examples/image-secret.png
+python app/cli.py hide image examples/image.png hide.txt mypublickey.pem examples/image-secret.png
 ```
 
 - Decode
 ```
-python cli.py extract image examples/image-secret.png myprivatekey.pem your_passphrase hide_extracted.txt
+python app/cli.py extract image examples/image-secret.png myprivatekey.pem your_passphrase hide_extracted.txt
 ```

@@ -2,7 +2,7 @@ import os
 import random
 import numpy as np
 import wave
-from util import load_private_key, load_public_key
+from util import load_private_key, load_public_key, get_data_type
 from encrypt import encrypt_preprocess
 from decrypt import decrypt_postprocess
 
@@ -23,45 +23,43 @@ def load_file_encrypt(key_path, audio_path, file_to_hide):
     return public_key, audio, file_bytes, filename
 
 def hide_file_in_audio_util(audio, file_bytes, filename, public_key, audioname=""):
-
     seed = audio.getnframes()
     prng = random.Random(seed) 
 
     # Read the original audio
-    bits = np.array(list(audio.readframes(audio.getnframes())), dtype=np.uint8)
+    bytes_per_sample = audio.getsampwidth()
+    frames = audio.readframes(audio.getnframes())
+
+    dtype = get_data_type(bytes_per_sample)
+
+    bits = np.frombuffer(frames, dtype=dtype).copy()  
 
     # get the binary representation of the file
     data_to_encode = encrypt_preprocess(file_bytes, filename, public_key)
 
-    # Calculate the number of pixels needed
+    # Calculate the number of samples needed
     file_size = len(data_to_encode)
-    num_pixels_required = file_size * 8  # 8 bits per byte
-    if num_pixels_required > len(bits):  
-        raise ValueError("Image is not large enough to hide the file.")
+    num_samples_required = file_size * 8 // (audio.getsampwidth() * 8)
+    if num_samples_required > len(bits):  
+        raise ValueError("Audio is not large enough to hide the file.")
 
     # Generate a list of unique indices to hide the data
-    pixel_indices = list(range(len(bits)))
-    prng.shuffle(pixel_indices)  # Shuffle using the seeded PRNG
+    sample_indices = list(range(len(bits)))
+    prng.shuffle(sample_indices)  # Shuffle using the seeded PRNG
 
-    # Embed the file size in the first 64 pixels (8 bytes for file size)
+    # Embed the file size in the first 64 samples (8 bytes for file size)
     for i in range(64):
-        idx = pixel_indices[i]
+        idx = sample_indices[i]
         bit = (file_size >> (63 - i)) & 0x1
         if (bits[idx] & 0x1) != bit:
             bits[idx] ^= 0x1
 
-    # Embed each bit of the data to encode in the image using LSB matching
+    # Embed each bit of the data to encode in the audio using LSB matching
     for i, byte in enumerate(data_to_encode):
         for bit in range(8):
-            idx = pixel_indices[64 + i * 8 + bit]
+            idx = sample_indices[64 + i * 8 + bit]
             if (bits[idx] & 0x1) != ((byte >> (7 - bit)) & 0x1):
                 bits[idx] ^= 0x1
-    
-    # print(bits[:20])
-
-    # bytes = bits.tobytes()
-
-    # print(bytes[:20])
 
     return bits
     
@@ -107,8 +105,13 @@ def extract_file_from_audio_util(audio, private_key):
     seed = audio.getnframes()
     prng = random.Random(seed)  
 
-    # Read the steganographed  audio
-    bits = np.array(list(audio.readframes(audio.getnframes())), dtype=np.uint8)
+    # Read the original audio
+    bytes_per_sample = audio.getsampwidth()
+    frames = audio.readframes(audio.getnframes())
+    
+    dtype = get_data_type(bytes_per_sample)
+
+    bits = np.frombuffer(frames, dtype=dtype).copy()  
 
     # Extract the file size from the first 64 pixels
     file_size = 0
