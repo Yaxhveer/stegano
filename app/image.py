@@ -80,15 +80,18 @@ def hide_file_in_img_util(img, imgname, file_to_hide, filename, public_key):
     # Embed the file size in the first 64 pixels (8 bytes for file size)
     for i in range(64):
         idx = pixel_indices[i]
-        bit = (file_size >> (63 - i)) & 0x1
-        if (pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] & 0x1) != bit:
+        seventh_bit = ((pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0]) >> 1) & 0x1
+        xor_bit = seventh_bit ^ ((file_size >> (63 - i)) & 0x1)
+        if (pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] & 0x1) != xor_bit:
             pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] ^= 0x1
 
     # Embed each bit of the data to encode in the image using LSB matching
     for i, byte in enumerate(data_to_encode):
         for bit in range(8):
             idx = pixel_indices[64 + i * 8 + bit]
-            if (pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] & 0x1) != ((byte >> (7 - bit)) & 0x1):
+            seventh_bit = ((pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0]) >> 1) & 0x1
+            xor_bit = seventh_bit ^ ((byte >> (7 - bit)) & 0x1)
+            if (pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] & 0x1) != xor_bit:
                 pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] ^= 0x1
 
     # Save the new image
@@ -184,7 +187,9 @@ def extract_file_from_img_util(img, private_key):
     file_size = 0
     for i in range(64):
         idx = pixel_indices[i]
-        file_size = (file_size << 1) | (pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] & 0x1)
+        seventh_bit = (((pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0]) >> 1) & 0x1)
+        xor_bit = (pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] & 0x1) ^ seventh_bit
+        file_size = (file_size << 1) | xor_bit
 
     # Calculate the number of bytes that can be extracted
     num_bytes_to_extract = file_size
@@ -195,7 +200,9 @@ def extract_file_from_img_util(img, private_key):
         byte = 0
         for bit in range(8):
             idx = pixel_indices[64 + i * 8 + bit]
-            byte = (byte << 1) | (pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] & 0x1)
+            seventh_bit = (((pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0]) >> 1) & 0x1)
+            xor_bit = (pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] & 0x1) ^ seventh_bit
+            byte = (byte << 1) | xor_bit
         extracted_bytes.append(byte)
     
     # Get the filename and filedata from extracted bytes

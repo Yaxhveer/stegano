@@ -50,15 +50,18 @@ def hide_file_in_audio_util(audio, file_bytes, filename, public_key, audioname="
     # Embed the file size in the first 64 samples (8 bytes for file size)
     for i in range(64):
         idx = sample_indices[i]
-        bit = (file_size >> (63 - i)) & 0x1
-        if (bits[idx] & 0x1) != bit:
+        seventh_bit = (bits[idx] >> 1) & 0x1
+        xor_bit = ((file_size >> (63 - i))) & 0x1 ^ seventh_bit
+        if (bits[idx] & 0x1) != xor_bit:
             bits[idx] ^= 0x1
 
     # Embed each bit of the data to encode in the audio using LSB matching
     for i, byte in enumerate(data_to_encode):
         for bit in range(8):
             idx = sample_indices[64 + i * 8 + bit]
-            if (bits[idx] & 0x1) != ((byte >> (7 - bit)) & 0x1):
+            seventh_bit = (bits[idx] >> 1) & 0x1
+            xor_bit = ((byte >> (7 - bit)) & 0x1) & 0x1 ^ seventh_bit
+            if (bits[idx] & 0x1) != xor_bit:
                 bits[idx] ^= 0x1
 
     return bits
@@ -132,7 +135,9 @@ def extract_file_from_audio_util(audio, private_key):
     file_size = 0
     for i in range(64):
         idx = pixel_indices[i]
-        file_size = (file_size << 1) | (bits[idx] & 0x1)
+        seventh_bit = (bits[idx] >> 1) & 0x1
+        xor_bit = (bits[idx] & 0x1) ^ seventh_bit
+        file_size = (file_size << 1) | xor_bit
 
     # Calculate the number of bytes that can be extracted
     num_bytes_to_extract = file_size
@@ -143,7 +148,9 @@ def extract_file_from_audio_util(audio, private_key):
         byte = 0
         for bit in range(8):
             idx = pixel_indices[64 + i * 8 + bit]
-            byte = (byte << 1) | (bits[idx] & 0x1)
+            seventh_bit = (bits[idx] >> 1) & 0x1
+            xor_bit = (bits[idx] & 0x1) ^ seventh_bit
+            byte = (byte << 1) | xor_bit
         extracted_bytes.append(byte)
     
     # Get the filename and filedata from extracted bytes
