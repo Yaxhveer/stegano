@@ -18,24 +18,13 @@ def calculate_psnr(faudio, saudio):
    return psnr
 
 # Read WAV files
-fs1, y1 = wav.read('examples/chime.wav')
-fs2, y2 = wav.read('examples/audio-chime.wav')
+_, y1 = wav.read('examples/audio.wav')
+_, y2 = wav.read('examples/audio-secret.wav')
 
 # Ensure both audio signals have the same length
 min_length = min(len(y1), len(y2))
 y1 = y1[:min_length]
 y2 = y2[:min_length]
-
-# Calculate MSE
-err = np.sum((y1 - y2) ** 2) / (min_length)
-MSE = np.sqrt(err)
-mm = np.mean((y1 - y2) ** 2)
-
-# Constants
-MAXVAL = 65535
-
-# Calculate PSNR
-# PSNR = 20 * np.log10(MAXVAL / MSE)
 
 PSNR = calculate_psnr(y1, y2)
 

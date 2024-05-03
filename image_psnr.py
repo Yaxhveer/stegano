@@ -18,8 +18,8 @@ def calculate_psnr(firstImage, secondImage):
    return psnr
 
 # Read the original and distorted images
-firstI = cv2.imread('examples/image.png')
-secondI = cv2.imread('examples/image-secret.png')
+firstI = cv2.imread('examples/dragon.png')
+secondI = cv2.imread('examples/dragon-secret.png')
 
 # Check if images are loaded successfully
 if firstI is None or secondI is None:
