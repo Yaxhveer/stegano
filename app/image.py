@@ -95,9 +95,9 @@ def hide_file_in_img_util(img, imgname, file_to_hide, filename, public_key):
                 pixels[idx // pixels.shape[1], idx % pixels.shape[1], 0] ^= 0x1
 
     # Save the new image
-    # new_img = Image.fromarray(pixels, 'RGBA')
+    new_img = Image.fromarray(pixels, 'RGBA')
 
-    return pixels, host_format
+    return new_img, host_format
 
 
 
@@ -110,8 +110,7 @@ def hide_file_in_img(image_path, file_to_hide, output_image_path, public_key_pat
     imgname = os.path.basename(file_to_hide).encode()
 
     # Generate new image along with its formats name
-    pixels, host_format = hide_file_in_img_util(img, imgname, file_bytes, filename, public_key)
-    new_img = Image.fromarray(pixels, 'RGBA')
+    new_img, host_format = hide_file_in_img_util(img, imgname, file_bytes, filename, public_key)
 
     # Check if the file already exists and prompt the user
     if os.path.exists(output_image_path):
