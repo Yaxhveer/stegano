@@ -10,12 +10,10 @@ from cryptography.hazmat.primitives import serialization
 import io
 
 
-# Create a Flask application
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 
-# Define a route for the home page
 @app.route('/')
 def home():
     return 'Welcome'
@@ -24,9 +22,6 @@ def home():
 @app.route('/audiohide', methods=['POST'])
 def audiohide():
     try:
-        if 'output' not in request.form:
-            return jsonify({"error": f"Missing required field: 'output'", "done": False}), 400
-
         required_files = ['secret', 'pubKey', 'audio']
         for field in required_files:
             if field not in request.files:
@@ -36,11 +31,9 @@ def audiohide():
         secret_file = request.files['secret']
         pub_key_file = request.files['pubKey']
         audio_file = request.files['audio']
-        output_name = request.form['output']
 
         file_name = secret_file.filename.encode()
         file_data = secret_file.read()
-        file_bytes = np.unpackbits(np.frombuffer(file_data, dtype=np.uint8))
 
         # Convert PEM data to public key object
         public_key_pem = pub_key_file.read()
@@ -51,9 +44,9 @@ def audiohide():
         # Open the audio
         audio = wave.open(audio_file, mode='rb')
 
-        # Process the data further as needed
+        # Process the data
         output = hide_file_in_audio_util(
-            audio, file_bytes, file_name, public_key)
+            audio, file_data, file_name, public_key)
 
         with io.BytesIO() as wav_io:
             with wave.open(wav_io, 'wb') as wav_file:
@@ -64,11 +57,10 @@ def audiohide():
 
         aud_byte = io.BytesIO(wav_bytes)
 
-        # For demonstration, just returning the received data
         return send_file(
             aud_byte,
             as_attachment=True,
-            download_name=output_name,
+            download_name="",
             mimetype='audio/wav',
         ), 200
 
@@ -96,7 +88,6 @@ def imagehide():
         # processing the secret file
         file_name = secret_file.filename.encode()
         file_data = secret_file.read()
-        file_bytes = np.unpackbits(np.frombuffer(file_data, dtype=np.uint8))
 
         # Convert PEM data to public key object
         public_key_pem = pub_key_file.read()
@@ -109,13 +100,13 @@ def imagehide():
         image = Image.open(image_file)
         image_name = image_file.filename
 
-        # Process the data further as needed
+        # Process the data
         output, host_format = hide_file_in_img_util(
-            image, image_name, file_bytes, file_name, public_key)
+            image, image_name, file_data, file_name, public_key)
 
         img_io = io.BytesIO()
 
-        output.save(img_io, 'PNG')
+        output.save(img_io, host_format)
         img_io.seek(0)
 
         if host_format == 'PNG':
@@ -129,7 +120,6 @@ def imagehide():
         else:
             mimetype = 'image/png'
 
-        # For demonstration, just returning the received data
         return send_file(
             img_io,
             as_attachment=True,
@@ -140,6 +130,7 @@ def imagehide():
     except Exception as err:
         return jsonify({"error": f"error occurred: {str(err)}", "done": False}), 500
 
+
 @app.route('/audioextract', methods=['POST'])
 def audioextract():
     try:
@@ -148,7 +139,7 @@ def audioextract():
             if field not in request.form:
                 return jsonify({"error": f"Missing required field: {field}", "done": False}), 400
 
-        required_files = ['priKey', 'image']
+        required_files = ['priKey', 'audio']
         for file in required_files:
             if file not in request.files:
                 return jsonify({"error": f"Missing file: {file}", "done": False}), 400
@@ -170,23 +161,21 @@ def audioextract():
         # Open the audio
         audio = wave.open(audio_file, mode='rb')
 
-        # Process the data further as needed
+        # Process the data
         output, filename = extract_file_from_audio_util(audio, private_key)
-        text_byte = io.BytesIO(output)
-        text_byte.seek(0)
 
+        text = output.decode("utf-8")
         output_name = output_name or filename
 
-        # For demonstration, just returning the received data
-        return send_file(
-            text_byte,
-            as_attachment=True,
-            download_name=output_name,
-            mimetype='text/plain',
-        ), 200
+        return jsonify({
+            "data": text,
+            "filename": output_name,
+            "done": True
+        }), 200
 
     except Exception as err:
         return jsonify({"error": f"error occurred: {str(err)}", "done": False}), 500
+
 
 @app.route('/imageextract', methods=['POST'])
 def imageextract():
@@ -218,24 +207,19 @@ def imageextract():
         # Open the audio
         image = Image.open(image_file)
 
-        # Process the data further as needed
         output, filename = extract_file_from_img_util(image, private_key)
-        text_byte = io.BytesIO(output)
-        text_byte.seek(0)
+        text = output.decode("utf-8")
 
         output_name = output_name or filename
-
-        # For demonstration, just returning the received data
-        return send_file(
-            text_byte,
-            as_attachment=True,
-            download_name=output_name,
-            mimetype='text/plain',
-        ), 200
+        return jsonify({
+            "data": text,
+            "filename": output_name,
+            "done": True
+        }), 200
 
     except Exception as err:
         return jsonify({"error": f"error occurred: {str(err)}", "done": False}), 500
-    
+
 
 # Run the Flask application on port 8000
 if __name__ == '__main__':
